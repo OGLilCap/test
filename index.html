@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On This Day in American History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Crimson Text', serif;
+            margin: 0;
+            min-height: 100vh;
+            background: 
+                linear-gradient(rgba(218, 165, 32, 0.12), rgba(178, 34, 52, 0.08)),
+                url('https://images.pexels.com/photos/208745/pexels-photo-208745.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2') center/cover no-repeat fixed; /* rustic wood + subtle flag vibe */
+            background-blend-mode: overlay;
+            color: #2e1b0f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #banner {
+            width: 100%;
+            max-width: 720px;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #b22234; /* American red */
+            background: rgba(255, 255, 255, 0.75);
+            padding: 12px;
+            border-radius: 10px;
+            margin: 20px 0 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid rgba(178,34,52,0.2);
+        }
+        #fact-container {
+            max-width: 720px;
+            background: #f4e9d8; /* aged parchment */
+            padding: 40px 50px;
+            border-radius: 12px;
+            box-shadow: 0 12px 35px rgba(60,47,47,0.18), inset 0 0 30px rgba(178,34,52,0.05);
+            position: relative;
+            border: 2px solid rgba(178,34,52,0.15);
+        }
+        #fact-container::before {
+            content: "";
+            position: absolute;
+            inset: -15px;
+            background: radial-gradient(circle at 25% 75%, rgba(255,255,240,0.35) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: #8b4513; /* rustic brown */
+            margin: 0 0 0.8rem;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.08);
+        }
+        #date-header {
+            font-size: 1.4rem;
+            color: #4a2e1a;
+            text-align: center;
+            margin: 0 0 1.5rem;
+            font-style: italic;
+        }
+        #fact {
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin: 1.2rem 0 1.5rem;
+            color: #2e1b0f;
+        }
+        #note, #filter-note {
+            font-size: 0.95rem;
+            color: #6b4e3a;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+        #controls {
+            text-align: center;
+            margin: 1.2rem 0 1.8rem;
+        }
+        select {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.1rem;
+            padding: 6px 14px;
+            border: 1px solid #8b4513;
+            border-radius: 5px;
+            background: #fdfaf3;
+            color: #4a2e1a;
+            cursor: pointer;
+        }
+        #loading {
+            font-size: 1.2rem;
+            color: #6b4e3a;
+            text-align: center;
+            margin-bottom: 1.2rem;
+        }
+        footer {
+            font-size: 0.9rem;
+            color: #6b4e3a;
+            text-align: center;
+            line-height: 1.4;
+            margin-top: 1.8rem;
+            border-top: 1px solid rgba(178,34,52,0.12);
+            padding-top: 1rem;
+        }
+        footer small {
+            display: block;
+            margin-top: 0.4rem;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="banner">Celebrating 250 Years of American Independence 1776–2026</div>
+    <div id="fact-container">
+        <h1>On This Day in American History</h1>
+        <div id="date-header"></div>
+        <div id="note"></div>
+        <p id="fact"></p>
+
+        <div id="controls">
+            <label for="decade">Filter by Decade: </label>
+            <select id="decade">
+                <option value="all">All Eras</option>
+                <option value="colonial">Colonial / Pre-1776</option>
+                <option value="1700">1700s</option>
+                <option value="1800">1800s</option>
+                <option value="1900">1900s</option>
+                <option value="2000">2000s+</option>
+            </select>
+        </div>
+
+        <div id="filter-note"></div>
+
+        <div id="loading">Loading your American historical moment...</div>
+
+        <footer>
+            <p>Tap your NFC bracelet again for a new fact.<br>
+            Come back tomorrow for fresh moments from this day in America's story.</p>
+            <small>Honoring 250 Years of American Liberty • Facts from Wikimedia OnThisDay & curated U.S. sources</small>
+        </footer>
+    </div>
+
+    <script>
+        function shuffleArray(array) {
+            const shuffled = array.slice();
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function deduplicateFacts(facts) {
+            const seen = new Set();
+            return facts.filter(f => {
+                const key = `${f.year || '0'}-${(f.text || '').toLowerCase()}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
+
+        const now = new Date();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const monthName = now.toLocaleString('default', { month: 'long' });
+        document.getElementById('date-header').textContent = `On this day, ${monthName} ${now.getDate()}...`;
+
+        const storageKeyAll = `allEvents_${month}_${day}`;
+        const storageKeyRemaining = `remainingEvents_${month}_${day}`;
+        const storageKeyFilter = `decadeFilter_${month}_${day}`;
+
+        let allEvents = JSON.parse(localStorage.getItem(storageKeyAll)) || [];
+        let remainingEvents = JSON.parse(localStorage.getItem(storageKeyRemaining)) || [];
+        let currentFilter = localStorage.getItem(storageKeyFilter) || 'all';
+
+        document.getElementById('decade').value = currentFilter;
+
+        // Expanded keywords including Native American terms
+        const usKeywords = [
+            'united states', 'u.s.', 'usa', 'america', 'american', 'washington', 'lincoln', 'jefferson',
+            'roosevelt', 'kennedy', 'king', 'civil war', 'revolutionary', 'declaration', 'constitution',
+            'pearl harbor', 'moon', 'apollo', 'confederate', 'union', 'virginia', 'york', 'california',
+            'texas', 'president', 'congress', 'supreme court', 'vietnam', 'world war', 'blizzard', 'lend-lease',
+            'army', 'fort', 'kansas', 'northeast', 'east coast', 'corps', 'native', 'indian', 'tribe', 'apache',
+            'navajo', 'cherokee', 'sioux', 'lakota', 'ponca', 'treaty', 'reservation', 'bureau of indian affairs',
+            'long walk', 'wounded knee', 'pueblo', 'comanche', 'miami', 'shoshone'
+        ].map(k => k.toLowerCase());
+
+        function isUSRelated(item) {
+            const text = (item.text || '').toLowerCase();
+            return usKeywords.some(k => text.includes(k));
+        }
+
+        function getDecade(yearStr) {
+            const yearNum = parseInt(yearStr.replace(/\D/g, ''), 10);
+            if (isNaN(yearNum) || yearNum < 1776) return 'colonial';
+            const century = Math.floor(yearNum / 100) * 100;
+            return century.toString();
+        }
+
+        function filterByDecade(events, decade) {
+            if (decade === 'all') return events;
+            return events.filter(e => getDecade(e.year) === decade);
+        }
+
+        async function fetchFacts() {
+            const datePath = `${month}/${day}`;
+            const sources = [
+                // Primary: Wikimedia OnThisDay (events, births, deaths)
+                fetch(`https://api.wikimedia.org/feed/v1/wikipedia/en/onthisday/all/${datePath}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        let combined = [];
+                        (data.events || []).forEach(e => combined.push({year: e.year, text: e.text, type: 'event'}));
+                        (data.births || []).forEach(b => combined.push({year: b.year, text: b.text, type: 'birth'}));
+                        (data.deaths || []).forEach(d => combined.push({year: d.year, text: d.text, type: 'death'}));
+                        return combined;
+                    })
+                    .catch(() => [])
+            ];
+
+            const results = await Promise.all(sources);
+            let combinedFacts = results.flat();
+
+            // Deduplicate & filter for American (including Native)
+            combinedFacts = deduplicateFacts(combinedFacts);
+            const usOnly = combinedFacts.filter(isUSRelated);
+            allEvents = usOnly.length > 0 ? usOnly : combinedFacts;
+
+            localStorage.setItem(storageKeyAll, JSON.stringify(allEvents));
+
+            if (usOnly.length === 0) {
+                document.getElementById('note').textContent = '(Limited U.S./Native-specific events today — showing notable historical moments)';
+            }
+
+            applyFilter();
+        }
+
+        function applyFilter() {
+            const filtered = filterByDecade(allEvents, currentFilter);
+            if (filtered.length === 0) {
+                document.getElementById('fact').textContent = '';
+                document.getElementById('filter-note').textContent = 'No events recorded in this decade for today. Try "All Eras" or a different decade!';
+                document.getElementById('loading').style.display = 'none';
+                remainingEvents = [];
+            } else {
+                remainingEvents = shuffleArray(filtered);
+                localStorage.setItem(storageKeyRemaining, JSON.stringify(remainingEvents));
+                document.getElementById('filter-note').textContent = '';
+                displayFact();
+            }
+        }
+
+        function displayFact() {
+            const factEl = document.getElementById('fact');
+            const loadingEl = document.getElementById('loading');
+
+            if (remainingEvents.length > 0) {
+                const item = remainingEvents.shift();
+                localStorage.setItem(storageKeyRemaining, JSON.stringify(remainingEvents));
+
+                const typeText = item.type.charAt(0).toUpperCase() + item.type.slice(1);
+                factEl.innerHTML = `In <strong>${item.year}</strong> <em>(${typeText})</em>: ${item.text}`;
+                loadingEl.style.display = 'none';
+            } else {
+                factEl.textContent = 'No more facts available for this filter today. Try another decade or come back tomorrow!';
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        document.getElementById('decade').addEventListener('change', (e) => {
+            currentFilter = e.target.value;
+            localStorage.setItem(storageKeyFilter, currentFilter);
+            applyFilter();
+        });
+
+        if (allEvents.length === 0) {
+            fetchFacts();
+        } else {
+            applyFilter();
+        }
+    </script>
+</body>
+</html>
